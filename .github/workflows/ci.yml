@@ -1,0 +1,25 @@
+name: Build and test
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  macos:
+    runs-on: macos-14
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Routing, recovery and configuration tests
+        run: bash test.sh
+      - name: Build Apple Silicon app
+        run: bash build.sh
+      - name: Verify bundle
+        run: |
+          codesign --verify --deep --strict build/BrowserRouter.app
+          plutil -lint build/BrowserRouter.app/Contents/Info.plist
+          test "$(lipo -archs build/BrowserRouter.app/Contents/MacOS/BrowserRouter)" = arm64
